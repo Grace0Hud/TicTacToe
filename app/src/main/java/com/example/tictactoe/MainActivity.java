@@ -1,16 +1,22 @@
 package com.example.tictactoe;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 
@@ -95,6 +101,10 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
     }//end MainActivity
 
+    public void onClickReset(View view)
+    {
+        resetScores();
+    }//end reset on click listener
     @Override
     public void onClick(View view) {
         if (!((Button) view).getText().toString().equals("")) {//checks to make sure you are clicking an empty box
@@ -103,13 +113,17 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         String buttonID = view.getResources().getResourceEntryName(view.getId()); //gets the id for a button clicked
         int boardPointer = Integer.parseInt(buttonID.substring(buttonID.length() - 1, buttonID.length())); //gets rid of the button from the grid once clicked
 
+        TextView playerOneDisplay = (TextView)findViewById(R.id.playerOne);
+        TextView playerTwoDisplay = (TextView)findViewById(R.id.playerTwo);
+
         if (activePlayer){
             ((Button) view).setText("X"); //adds an x to the button
-        ((Button) view).setTextColor(Color.parseColor("#465362")); //changes the color of the x added to button
+        ((Button) view).setTextColor(getResources().getColor(R.color.black)); //changes the color of the x added to button
             board[boardPointer] = 0; //updates which buttons are still on the board & 0 for player one
     } else {
             ((Button)view).setText("O"); //adds an o to the button
-            ((Button)view).setTextColor(Color.parseColor("#82A3A1"));//changes the color of the o added to the button
+            ((Button)view).setTextColor(getResources().getColor(R.color.white));//changes the color of the o added to the button
+
             board[boardPointer] = 1; //updates which buttons are on the board & 1 for player two
         }
         roundCount++; //increases for check of tie
@@ -120,25 +134,28 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             {
                 playerOneScoreCount++;
                 updatePlayerScore();
-                //buttons need to be reset until ↓ is true
-                if(playerOneScoreCount==winningScore)//checks to see is player 1 has reached the required score to win
-                {
-                    changeScreen();
-                }//end inner if
+                changeScreen("Player 1 WINS!!");
             }//end if  player 1's turn
             else {
                 playerTwoScoreCount++;
                 updatePlayerScore();
-                if(playerTwoScoreCount==winningScore)//checks to see is player 2 has reached the required score to win
-                {
-                    changeScreen();
-                }   //end inner if
+                changeScreen("Player 2 WINS!!");
             }//end else (player 2's turn)
         } else if (roundCount==9) //checks if it results in a tie
         {
-            //put play again in here
+            changeScreen("TIE :(");
         } else {
             activePlayer = !activePlayer;
+            if(activePlayer)
+            {
+                playerOneDisplay.setTextColor(getResources().getColor(R.color.scarletLake));
+                playerTwoDisplay.setTextColor(getResources().getColor(R.color.frenchGrey));
+            }
+            else
+            {
+                playerTwoDisplay.setTextColor(getResources().getColor(R.color.scarletLake));
+                playerOneDisplay.setTextColor(getResources().getColor(R.color.frenchGrey));
+            }
         }
 
     }
@@ -164,9 +181,62 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         playerTwoScore.setText(Integer.toString(playerTwoScoreCount));
     }
 
-    public void changeScreen()//changes score after player wins
+    public void changeScreen(String str)//changes screen after player wins
     {
-        startActivity(new Intent(MainActivity.this, WinScreen.class));
+        //opens up a dialogue box instead of a layout for the win screen
+        LayoutInflater layoutInflater = LayoutInflater.from(this);
+
+        View promptView = layoutInflater.inflate(R.layout.activity_win_screen, null);
+
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+
+        //set up reference for winnerTV so that Jaque can do updates - thanks :)
+        alertDialogBuilder.setView(promptView);
+        TextView winnerTv = (TextView) promptView.findViewById(R.id.winnerTV);
+         winnerTv.setText(str);
+
+        // set prompts.xml to be the layout file of the alertdialog builder
+        alertDialogBuilder.setView(promptView);
+
+        // setup a dialog window
+        alertDialogBuilder
+                .setCancelable(false)
+                .setPositiveButton("Play Again", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        playAgain();
+                     //dialog.cancel();
+                    }
+                })
+                .setNegativeButton("Reset Scores",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                resetScores();
+                                dialog.cancel();
+                            }
+                        });
+
+        // create an alert dialog
+        AlertDialog alertD = alertDialogBuilder.create();
+
+        alertD.show();
     }
+
+    public void playAgain()
+    {
+        for(int i = 0; i < btns.length; i++)
+        {
+            btns[i].setText("");
+            board[i] = 2;
+        }//end for
+        roundCount = 0;
+    }//end playAgain
+
+    public void resetScores()
+    {
+        playAgain();
+        playerOneScoreCount = 0;
+        playerTwoScoreCount = 0;
+        updatePlayerScore();
+    }//end reset scores
 
 }
